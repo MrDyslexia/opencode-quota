@@ -1,4 +1,5 @@
 import { GEMINI_PROVIDER_ID } from "./constants";
+import { geminiFetch } from "./fetch";
 import { createOAuthAuthorizeMethod } from "./plugin/oauth-authorize";
 import { accessTokenExpired, isOAuthAuth } from "./plugin/auth";
 import { resolveCachedAuth } from "./plugin/cache";
@@ -95,25 +96,25 @@ export const GeminiCLIOAuthPlugin = async (
           apiKey: "",
           async fetch(input, init) {
             if (!isGenerativeLanguageRequest(input)) {
-              return fetch(input, init);
+              return geminiFetch(input, init);
             }
 
             const latestAuth = await getAuth();
             if (!isOAuthAuth(latestAuth)) {
-              return fetch(input, init);
+              return geminiFetch(input, init);
             }
 
             let authRecord = resolveCachedAuth(latestAuth);
             if (accessTokenExpired(authRecord)) {
               const refreshed = await refreshAccessToken(authRecord, client);
               if (!refreshed) {
-                return fetch(input, init);
+                return geminiFetch(input, init);
               }
               authRecord = refreshed;
             }
 
             if (!authRecord.access) {
-              return fetch(input, init);
+              return geminiFetch(input, init);
             }
 
             const configuredProjectId = await resolveLatestConfiguredProjectId(provider);

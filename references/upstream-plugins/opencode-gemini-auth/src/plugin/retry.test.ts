@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 import { fetchWithRetry, retryInternals } from "./retry";
+import { classifyQuotaResponse } from "./retry/quota";
 
 const originalSetTimeout = globalThis.setTimeout;
 const scheduledDelays: number[] = [];
@@ -140,6 +141,29 @@ describe("fetchWithRetry", () => {
 
     expect(response.status).toBe(429);
     expect(fetchMock.mock.calls.length).toBe(1);
+  });
+
+  it("classifies cloudaicompanion quota errors", async () => {
+    const response = new Response(
+      JSON.stringify({
+        error: {
+          message: "quota exhausted",
+          details: [
+            {
+              "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+              reason: "QUOTA_EXHAUSTED",
+              domain: "cloudaicompanion.googleapis.com",
+            },
+          ],
+        },
+      }),
+      { status: 429, headers: { "content-type": "application/json" } },
+    );
+
+    await expect(classifyQuotaResponse(response)).resolves.toEqual({
+      terminal: true,
+      reason: "QUOTA_EXHAUSTED",
+    });
   });
 
   it("fails fast on model capacity exhaustion when no retry hint is provided", async () => {

@@ -169,12 +169,19 @@ function normalizeThinking(
   providerThinkingConfig: unknown,
 ): void {
   const rawGenerationConfig = requestPayload.generationConfig as Record<string, unknown> | undefined;
+  const hasRootThinkingConfig = Object.prototype.hasOwnProperty.call(requestPayload, "thinkingConfig");
   const hasRequestThinkingConfig =
-    !!rawGenerationConfig && Object.prototype.hasOwnProperty.call(rawGenerationConfig, "thinkingConfig");
-  const sourceThinkingConfig = hasRequestThinkingConfig
+    hasRootThinkingConfig ||
+    (!!rawGenerationConfig && Object.prototype.hasOwnProperty.call(rawGenerationConfig, "thinkingConfig"));
+  const sourceThinkingConfig = hasRootThinkingConfig
+    ? requestPayload.thinkingConfig
+    : hasRequestThinkingConfig
     ? rawGenerationConfig?.thinkingConfig
     : modelThinkingConfig ?? providerThinkingConfig;
   const normalizedThinking = normalizeThinkingConfig(sourceThinkingConfig);
+  if (hasRootThinkingConfig) {
+    delete requestPayload.thinkingConfig;
+  }
   if (normalizedThinking) {
     if (rawGenerationConfig) {
       rawGenerationConfig.thinkingConfig = normalizedThinking;

@@ -199,4 +199,38 @@ describe("request helpers", () => {
       includeThoughts: false,
     });
   });
+
+  it("moves root-level thinkingConfig into generationConfig", () => {
+    const input =
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent";
+    const init: RequestInit = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: "hi" }] }],
+        thinkingConfig: {
+          thinkingLevel: "low",
+          includeThoughts: true,
+        },
+      }),
+    };
+
+    const result = prepareGeminiRequest(input, init, "token-123", "project-456", {
+      provider: {
+        thinkingLevel: "high",
+        includeThoughts: false,
+      },
+    });
+
+    const parsed = JSON.parse(result.init.body as string) as Record<string, unknown>;
+    const request = parsed.request as Record<string, unknown>;
+    const generationConfig = request.generationConfig as Record<string, unknown>;
+    expect(request.thinkingConfig).toBeUndefined();
+    expect(generationConfig.thinkingConfig).toEqual({
+      thinkingLevel: "low",
+      includeThoughts: true,
+    });
+  });
 });

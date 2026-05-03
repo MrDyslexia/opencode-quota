@@ -4,7 +4,6 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { queryCrofQuota } from "../src/lib/crof.js";
 
-
 describe("queryCrofQuota", () => {
   const originalEnv = process.env;
   const originalCwd = process.cwd();
@@ -26,6 +25,7 @@ describe("queryCrofQuota", () => {
 
   it("returns null when not configured", async () => {
     delete process.env.CROF_API_KEY;
+    delete process.env.CROFAI_API_KEY;
 
     await expect(queryCrofQuota()).resolves.toBeNull();
   });
@@ -60,6 +60,35 @@ describe("queryCrofQuota", () => {
         method: "GET",
         headers: expect.objectContaining({
           Authorization: "Bearer test-key",
+        }),
+      }),
+    );
+  });
+
+  it("supports the CROFAI_API_KEY env alias", async () => {
+    delete process.env.CROF_API_KEY;
+    process.env.CROFAI_API_KEY = "crofai-key";
+
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            credits: 0,
+            requests_plan: 100,
+            usable_requests: 25,
+          }),
+          { status: 200 },
+        ),
+    ) as any;
+    vi.stubGlobal("fetch", fetchMock);
+
+    const out = await queryCrofQuota();
+    expect(out && out.success ? out.percentRemaining : -1).toBe(25);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://crof.ai/usage_api/",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Bearer crofai-key",
         }),
       }),
     );
@@ -152,6 +181,48 @@ describe("queryCrofQuota", () => {
     );
   });
 
+  it("allows CROFAI_API_KEY env templates in trusted global config", async () => {
+    process.env.CROFAI_API_KEY = "template-key";
+    mkdirSync(join(tempDir, "opencode"), { recursive: true });
+    writeFileSync(
+      join(tempDir, "opencode", "opencode.json"),
+      JSON.stringify({
+        provider: {
+          crof: {
+            options: {
+              apiKey: "{env:CROFAI_API_KEY}",
+            },
+          },
+        },
+      }),
+      "utf-8",
+    );
+
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            credits: 1,
+            requests_plan: 10,
+            usable_requests: 10,
+          }),
+          { status: 200 },
+        ),
+    ) as any;
+    vi.stubGlobal("fetch", fetchMock);
+
+    const out = await queryCrofQuota();
+    expect(out && out.success ? out.percentRemaining : -1).toBe(100);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://crof.ai/usage_api/",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Bearer template-key",
+        }),
+      }),
+    );
+  });
+
   it("rejects arbitrary env templates in trusted global config", async () => {
     process.env.GITHUB_TOKEN = "github-secret";
     mkdirSync(join(tempDir, "opencode"), { recursive: true });
@@ -172,5 +243,4 @@ describe("queryCrofQuota", () => {
     const out = await queryCrofQuota();
     expect(out).toBeNull();
   });
-
 });

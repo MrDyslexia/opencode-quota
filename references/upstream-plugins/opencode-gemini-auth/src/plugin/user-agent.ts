@@ -5,6 +5,7 @@ import { GEMINI_CLI_VERSION } from "./gemini-cli-version";
 
 const GEMINI_CLI_UA_NAME = "GeminiCLI";
 const GEMINI_CLI_DEFAULT_MODEL = "gemini-code-assist";
+const GEMINI_CLI_DEFAULT_SURFACE = "terminal";
 
 let cachedGeminiCliVersion: string | undefined;
 
@@ -66,7 +67,16 @@ export function getGeminiCliVersion(): string {
  */
 export function buildGeminiCliUserAgent(model?: string): string {
   const modelSegment = model?.trim() || GEMINI_CLI_DEFAULT_MODEL;
-  return `${GEMINI_CLI_UA_NAME}/${getGeminiCliVersion()}/${modelSegment} (${process.platform}; ${process.arch})`;
+  const platformSegment = `${process.platform}; ${process.arch}; ${getGeminiCliSurface()}`;
+  return `${GEMINI_CLI_UA_NAME}/${getGeminiCliVersion()}/${modelSegment} (${platformSegment})`;
+}
+
+function getGeminiCliSurface(): string {
+  return (
+    process.env.GEMINI_CLI_SURFACE?.trim() ||
+    process.env.SURFACE?.trim() ||
+    GEMINI_CLI_DEFAULT_SURFACE
+  );
 }
 
 export const userAgentInternals = {

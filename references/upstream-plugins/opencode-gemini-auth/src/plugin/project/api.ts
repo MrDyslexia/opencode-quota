@@ -1,4 +1,5 @@
 import { GEMINI_CODE_ASSIST_ENDPOINT } from "../../constants";
+import { geminiFetch } from "../../fetch";
 import { createGeminiActivityRequestId } from "../activity-request-id";
 import { logGeminiDebugResponse, startGeminiDebugRequest } from "../debug";
 import { buildGeminiCliUserAgent } from "../user-agent";
@@ -38,7 +39,7 @@ export async function loadManagedProject(
       projectId,
     });
 
-    const response = await fetch(url, {
+    const response = await geminiFetch(url, {
       method: "POST",
       headers,
       body: JSON.stringify(requestBody),
@@ -151,7 +152,7 @@ export async function retrieveUserQuota(
   const headers = buildCodeAssistHeaders(accessToken, userAgentModel);
 
   try {
-    const response = await fetch(url, {
+    const response = await geminiFetch(url, {
       method: "POST",
       headers,
       body: JSON.stringify({ project: projectId }),
@@ -191,7 +192,7 @@ async function fetchWithDebug(
     streaming: false,
     projectId,
   });
-  const response = await fetch(url, {
+  const response = await geminiFetch(url, {
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined,

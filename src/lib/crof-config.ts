@@ -2,7 +2,7 @@
  * Crof.ai API key configuration resolver.
  *
  * Resolution priority (first wins):
- * 1. Environment variable: CROF_API_KEY
+ * 1. Environment variable: CROF_API_KEY or CROFAI_API_KEY
  * 2. User/global opencode.json/opencode.jsonc: provider.crof.options.apiKey
  */
 
@@ -18,16 +18,19 @@ export interface CrofApiKeyResult {
   source: CrofKeySource;
 }
 
-const ALLOWED_CROF_ENV_VARS = ["CROF_API_KEY"] as const;
+const ALLOWED_CROF_ENV_VARS = ["CROF_API_KEY", "CROFAI_API_KEY"] as const;
 const CROF_PROVIDER_KEYS = ["crof"] as const;
 
-export type CrofKeySource = "env:CROF_API_KEY" | "opencode.json" | "opencode.jsonc";
+export type CrofKeySource = "env:CROF_API_KEY" | "env:CROFAI_API_KEY" | "opencode.json" | "opencode.jsonc";
 
 export { getGlobalOpencodeConfigCandidatePaths as getOpencodeConfigCandidatePaths } from "./api-key-resolver.js";
 
 export async function resolveCrofApiKey(): Promise<CrofApiKeyResult | null> {
   return resolveApiKeyFromEnvAndConfig<CrofKeySource>({
-    envVars: [{ name: "CROF_API_KEY", source: "env:CROF_API_KEY" }],
+    envVars: [
+      { name: "CROF_API_KEY", source: "env:CROF_API_KEY" },
+      { name: "CROFAI_API_KEY", source: "env:CROFAI_API_KEY" },
+    ],
     extractFromConfig: (config) =>
       extractProviderOptionsApiKey(config, {
         providerKeys: CROF_PROVIDER_KEYS,
@@ -50,7 +53,7 @@ export async function getCrofKeyDiagnostics(): Promise<{
   checkedPaths: string[];
 }> {
   return getApiKeyDiagnostics<CrofKeySource>({
-    envVarNames: ["CROF_API_KEY"],
+    envVarNames: ["CROF_API_KEY", "CROFAI_API_KEY"],
     resolve: resolveCrofApiKey,
     getConfigCandidates: getGlobalOpencodeConfigCandidatePaths,
   });

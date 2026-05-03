@@ -3,6 +3,7 @@ import {
   GEMINI_CLIENT_SECRET,
   GEMINI_PROVIDER_ID,
 } from "../constants";
+import { geminiFetch } from "../fetch";
 import { formatRefreshParts, parseRefreshParts } from "./auth";
 import { clearCachedAuth, storeCachedAuth } from "./cache";
 import {
@@ -226,7 +227,7 @@ async function fetchTokenRefresh(refreshToken: string): Promise<Response> {
     }
 
     try {
-      const response = await fetch(tokenUrl, init);
+      const response = await geminiFetch(tokenUrl, init);
       if (!isRetryableStatus(response.status) || attempt >= DEFAULT_MAX_ATTEMPTS) {
         return response;
       }
@@ -246,5 +247,5 @@ async function fetchTokenRefresh(refreshToken: string): Promise<Response> {
     }
   }
 
-  return fetch(tokenUrl, init);
+  return geminiFetch(tokenUrl, init);
 }

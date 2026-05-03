@@ -12,6 +12,7 @@ import {
   isGeminiDebugEnabled,
   logGeminiDebugMessage,
 } from "../plugin/debug";
+import { geminiFetch } from "../fetch";
 
 interface PkcePair {
   challenge: string;
@@ -105,7 +106,7 @@ async function exchangeGeminiWithVerifierInternal(
   if (isGeminiDebugEnabled()) {
     logGeminiDebugMessage("OAuth exchange: POST https://oauth2.googleapis.com/token");
   }
-  const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+  const tokenResponse = await geminiFetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -144,7 +145,7 @@ async function exchangeGeminiWithVerifierInternal(
   if (isGeminiDebugEnabled()) {
     logGeminiDebugMessage("OAuth userinfo: GET https://www.googleapis.com/oauth2/v1/userinfo");
   }
-  const userInfoResponse = await fetch(
+  const userInfoResponse = await geminiFetch(
     "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",
     {
       headers: {

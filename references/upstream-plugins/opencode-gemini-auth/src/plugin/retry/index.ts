@@ -9,6 +9,7 @@ import {
 } from "./helpers";
 import { classifyQuotaResponse, retryInternals } from "./quota";
 import { isGeminiDebugEnabled, logGeminiDebugMessage } from "../debug";
+import { geminiFetch } from "../../fetch";
 
 const retryCooldownByKey = new Map<string, number>();
 const RETRY_IN_FLIGHT_LOG_INTERVAL_MS = 5000;
@@ -25,7 +26,7 @@ export async function fetchWithRetry(
   init: RequestInit | undefined,
 ): Promise<Response> {
   if (!canRetryRequest(init)) {
-    return fetch(input, init);
+    return geminiFetch(input, init);
   }
 
   const retryInit = cloneRetryableInit(init);
@@ -41,7 +42,7 @@ export async function fetchWithRetry(
       debugRetry(
         `attempt ${attempt}/${DEFAULT_MAX_ATTEMPTS} -> ${url}`,
       );
-      response = await fetch(input, retryInit);
+      response = await geminiFetch(input, retryInit);
     } catch (error) {
       stopInFlightLog();
       if (attempt >= DEFAULT_MAX_ATTEMPTS || !isRetryableNetworkError(error)) {
@@ -103,7 +104,7 @@ export async function fetchWithRetry(
     attempt += 1;
   }
 
-  return fetch(input, retryInit);
+  return geminiFetch(input, retryInit);
 }
 
 function cloneRetryableInit(init: RequestInit | undefined): RequestInit {

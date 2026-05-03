@@ -184,7 +184,7 @@ export const QUOTA_PROVIDER_SHAPES: readonly QuotaProviderShape[] = [
     authentication: "external_api_key",
     authFallbacks: ["env_api_key", "global_opencode_config"],
     quota: "remote_api",
-    notes: "Requires CROF_API_KEY or trusted user/global config; not available through OpenCode /connect",
+    notes: "Requires CROF_API_KEY, CROFAI_API_KEY, or trusted user/global config; not available through OpenCode /connect",
   },
   {
     id: "google-antigravity",

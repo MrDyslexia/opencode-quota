@@ -90,7 +90,62 @@ or via environment variables:
 You can also set `OPENCODE_GEMINI_PROJECT_ID`, `GOOGLE_CLOUD_PROJECT`, or
 `GOOGLE_CLOUD_PROJECT_ID` to supply the project ID via environment variables.
 
+### Proxy
+
+If your network requires an HTTP proxy for Google API calls, set
+`OPENCODE_GEMINI_AUTH_PROXY` before starting Opencode:
+
+```bash
+OPENCODE_GEMINI_AUTH_PROXY=http://127.0.0.1:8080 opencode
+```
+
+This is passed to Bun's `fetch` proxy option and applies to OAuth, token
+refresh, project/quota lookup, and Gemini request forwarding.
+
 ### Model list
+
+If you want to remove unusable models from the picker, use OpenCode's
+`provider.google.whitelist` or `provider.google.blacklist` settings.
+
+- `whitelist`: only show the listed model IDs.
+- `blacklist`: hide specific model IDs from the default list.
+- `models`: define or override model metadata/options, but does not remove the
+  default models by itself.
+
+Use the exact model IDs reported by `opencode models google` when building these
+lists.
+
+Example: keep only a small Gemini model list visible.
+
+```json
+{
+  "provider": {
+    "google": {
+      "whitelist": [
+        "gemini-2.5-flash",
+        "gemini-2.5-pro",
+        "gemini-3-flash-preview",
+        "gemini-3-pro-preview"
+      ]
+    }
+  }
+}
+```
+
+Example: hide a few unwanted defaults while keeping the rest.
+
+```json
+{
+  "provider": {
+    "google": {
+      "blacklist": [
+        "gemini-2.0-flash-exp",
+        "gemini-1.5-pro"
+      ]
+    }
+  }
+}
+```
 
 Below are example model entries you can add under `provider.google.models` in your
 Opencode config. Each model can include an `options.thinkingConfig` block to
@@ -182,6 +237,10 @@ A combined example showing both model types:
 
 If you don't set a `thinkingConfig` for a model, the plugin will use default
 behavior for that model.
+
+The plugin also accepts request payloads that put `thinkingConfig` at the root
+and normalizes them into `generationConfig.thinkingConfig` before forwarding to
+Gemini Code Assist.
 
 ## Troubleshooting
 
