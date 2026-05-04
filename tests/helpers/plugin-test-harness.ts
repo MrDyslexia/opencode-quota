@@ -127,6 +127,28 @@ export function makeQuotaToastTestConfig(
   return {
     ...DEFAULT_CONFIG,
     ...overrides,
+    enabledProviders:
+      overrides.enabledProviders !== undefined
+        ? Array.isArray(overrides.enabledProviders)
+          ? [...overrides.enabledProviders]
+          : overrides.enabledProviders
+        : Array.isArray(DEFAULT_CONFIG.enabledProviders)
+          ? [...DEFAULT_CONFIG.enabledProviders]
+          : DEFAULT_CONFIG.enabledProviders,
+    googleModels: [...(overrides.googleModels ?? DEFAULT_CONFIG.googleModels)],
+    opencodeGoWindows: [...(overrides.opencodeGoWindows ?? DEFAULT_CONFIG.opencodeGoWindows)],
+    pricingSnapshot: {
+      ...DEFAULT_CONFIG.pricingSnapshot,
+      ...overrides.pricingSnapshot,
+    },
+    tuiCompactStatus: {
+      ...DEFAULT_CONFIG.tuiCompactStatus,
+      ...overrides.tuiCompactStatus,
+    },
+    layout: {
+      ...DEFAULT_CONFIG.layout,
+      ...overrides.layout,
+    },
   };
 }
 

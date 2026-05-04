@@ -17,6 +17,7 @@ vi.mock("../src/lib/opencode-runtime-paths.js", () => ({
 }));
 
 import { createLoadConfigMeta, loadConfig } from "../src/lib/config.js";
+import { DEFAULT_CONFIG } from "../src/lib/types.js";
 
 describe("loadConfig", () => {
   let isolatedCwd: string;
@@ -62,6 +63,75 @@ describe("loadConfig", () => {
 
     return { config, meta };
   }
+
+  it("defaults tuiCompactStatus and accepts validated nested overrides", async () => {
+    const defaults = await loadSdkConfig({});
+    expect(defaults.config.tuiCompactStatus).toEqual(DEFAULT_CONFIG.tuiCompactStatus);
+    expect(defaults.config.tuiCompactStatus).not.toBe(DEFAULT_CONFIG.tuiCompactStatus);
+
+    const explicit = await loadSdkConfig({
+      tuiCompactStatus: {
+        enabled: true,
+        homeBottom: false,
+        sessionPrompt: false,
+        suppressWhenNativeProviderQuota: false,
+        maxWidth: 72,
+      },
+    });
+    expect(explicit.config.tuiCompactStatus).toEqual({
+      enabled: true,
+      homeBottom: false,
+      sessionPrompt: false,
+      suppressWhenNativeProviderQuota: false,
+      maxWidth: 72,
+    });
+    expect(explicit.meta.settingSources).toEqual({
+      "tuiCompactStatus.enabled": "client.config.get",
+      "tuiCompactStatus.homeBottom": "client.config.get",
+      "tuiCompactStatus.sessionPrompt": "client.config.get",
+      "tuiCompactStatus.suppressWhenNativeProviderQuota": "client.config.get",
+      "tuiCompactStatus.maxWidth": "client.config.get",
+    });
+    expect(explicit.meta.networkSettingSources).toEqual({});
+
+    const partialInvalid = await loadSdkConfig({
+      tuiCompactStatus: {
+        enabled: true,
+        homeBottom: "no",
+        sessionPrompt: null,
+        suppressWhenNativeProviderQuota: 0,
+        maxWidth: -1,
+      },
+    });
+    expect(partialInvalid.config.tuiCompactStatus).toEqual({
+      ...DEFAULT_CONFIG.tuiCompactStatus,
+      enabled: true,
+    });
+    expect(partialInvalid.meta.settingSources).toEqual({
+      "tuiCompactStatus.enabled": "client.config.get",
+    });
+
+    const invalidNested = await loadSdkConfig({ tuiCompactStatus: "enabled" });
+    expect(invalidNested.config.tuiCompactStatus).toEqual(DEFAULT_CONFIG.tuiCompactStatus);
+    expect(invalidNested.meta.settingSources).toEqual({});
+  });
+
+  it("deep-clones default config when no config source exists", async () => {
+    const meta = createLoadConfigMeta();
+    const first = await loadConfig(undefined, meta, { cwd: isolatedCwd });
+    first.tuiCompactStatus.enabled = true;
+    first.tuiCompactStatus.maxWidth = 1;
+
+    const second = await loadConfig(undefined, undefined, { cwd: isolatedCwd });
+    expect(second.tuiCompactStatus).toEqual(DEFAULT_CONFIG.tuiCompactStatus);
+    expect(DEFAULT_CONFIG.tuiCompactStatus).toEqual({
+      enabled: false,
+      homeBottom: true,
+      sessionPrompt: true,
+      suppressWhenNativeProviderQuota: true,
+      maxWidth: 96,
+    });
+  });
 
   it("defaults requestTimeoutMs to 5000 and accepts positive finite overrides", async () => {
     const defaults = await loadSdkConfig({});

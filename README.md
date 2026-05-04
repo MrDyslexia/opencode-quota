@@ -108,6 +108,20 @@ Quota settings go in `opencode-quota/quota-toast.json` next to the OpenCode conf
 | `layout.tinyAt`   | `32`    | Toast tiny-layout breakpoint. Ignored by the TUI sidebar.                       |
 | `debug`           | `false` | Append toast debug context when troubleshooting.                                |
 
+#### TUI compact status settings
+
+Compact TUI status surfaces are opt-in. The `Quota` sidebar remains registered independently; when `tuiCompactStatus.enabled` is true, the TUI plugin can also register compact `home_bottom` and `session_prompt` status lines. By default, compact status is suppressed when OpenCode exposes native provider-quota support.
+
+The `sessionPrompt` surface wraps OpenCode's core prompt slot, so keep it disabled if you rely on other prompt-slot integrations and see interop issues.
+
+| Option                                           | Default | Meaning                                                     |
+| ------------------------------------------------ | ------- | ----------------------------------------------------------- |
+| `tuiCompactStatus.enabled`                       | `false` | Opt in to compact TUI status surfaces.                      |
+| `tuiCompactStatus.homeBottom`                    | `true`  | Register the TUI home-bottom compact status when compact status is enabled. |
+| `tuiCompactStatus.sessionPrompt`                 | `true`  | Wrap the TUI session prompt with a compact status line when compact status is enabled. |
+| `tuiCompactStatus.suppressWhenNativeProviderQuota` | `true`  | Suppress compact status when OpenCode exposes native provider-quota support. |
+| `tuiCompactStatus.maxWidth`                      | `96`    | Maximum compact status text width.                          |
+
 #### TUI sidebar setup
 
 If you want the `Quota` sidebar panel, you need the plugin in both OpenCode config surfaces:

@@ -27,6 +27,14 @@ export interface PricingSnapshotConfig {
   autoRefresh: number;
 }
 
+export interface TuiCompactStatusConfig {
+  enabled: boolean;
+  homeBottom: boolean;
+  sessionPrompt: boolean;
+  suppressWhenNativeProviderQuota: boolean;
+  maxWidth: number;
+}
+
 /** Request timeout in milliseconds */
 export const REQUEST_TIMEOUT_MS = 5000;
 
@@ -106,6 +114,9 @@ export interface QuotaToastConfig {
    */
   showSessionTokens: boolean;
 
+  /** Opt-in compact quota/status text for future TUI prompt/home surfaces. */
+  tuiCompactStatus: TuiCompactStatusConfig;
+
   /** Responsive toast layout breakpoints (not used by the fixed-width TUI sidebar). */
   layout: {
     /** Default max width target for toast formatting */
@@ -151,6 +162,13 @@ export const DEFAULT_CONFIG: QuotaToastConfig = {
   toastDurationMs: 9000,
   onlyCurrentModel: false,
   showSessionTokens: true,
+  tuiCompactStatus: {
+    enabled: false,
+    homeBottom: true,
+    sessionPrompt: true,
+    suppressWhenNativeProviderQuota: true,
+    maxWidth: 96,
+  },
   layout: {
     maxWidth: 50,
     narrowAt: 42,
