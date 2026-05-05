@@ -1026,8 +1026,8 @@ async function promptForSelections(
   const showSessionTokens = await prompts.select({
     message: "Session token details",
     options: [
-      { label: "Show session tokens", value: "yes", hint: "include current session input/output token counts when available" },
       { label: "Hide session tokens", value: "no", hint: "keep quota output shorter" },
+      { label: "Show session tokens", value: "yes", hint: "include current session input/output token counts when available" },
     ],
   });
   if (prompts.isCancel(showSessionTokens)) return null;

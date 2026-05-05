@@ -829,6 +829,11 @@ describe("init installer planning and merge behavior", () => {
       { label: "Compact status line", value: "compact_status", hint: "short quota summary in the TUI status area" },
       { label: "Terminal/slash commands only", value: "none", hint: "no toast, sidebar, or compact status UI" },
     ]);
+    const sessionTokenCall = prompts.selectCalls.find((call) => call.message === "Session token details");
+    expect(sessionTokenCall?.options).toEqual([
+      { label: "Hide session tokens", value: "no", hint: "keep quota output shorter" },
+      { label: "Show session tokens", value: "yes", hint: "include current session input/output token counts when available" },
+    ]);
     const messages = prompts.selectCalls.map((call) => call.message);
     expect(messages).not.toContain("Compact TUI status");
     const quotaConfig = readJson(join(tempDir, "opencode-quota", "quota-toast.json"));

@@ -1,21 +1,15 @@
 import type { QuotaRenderData } from "./quota-render-data.js";
 import type { QuotaToastConfig } from "./types.js";
-import type { QuotaToastError } from "./entries.js";
+import type { QuotaToastEntry, QuotaToastError } from "./entries.js";
 
 import { isValueEntry } from "./entries.js";
-import {
-  bar,
-  formatDisplayedPercentLabel,
-  resolveDisplayedPercent,
-} from "./format-utils.js";
-import {
-  sanitizeQuotaRenderData,
-  sanitizeSingleLineDisplayText,
-} from "./display-sanitize.js";
-import { buildSingleWindowPercentEntryDisplayName } from "./quota-entry-display.js";
+import { formatDisplayedPercentLabel } from "./format-utils.js";
+import { sanitizeQuotaRenderData, sanitizeSingleLineDisplayText } from "./display-sanitize.js";
+import { extractSingleWindowWindowLabel } from "./quota-entry-display.js";
+import { formatGroupedHeader } from "./grouped-header-format.js";
 
-const COMPACT_SEGMENT_SEPARATOR = " · ";
-const COMPACT_PERCENT_BAR_WIDTH = 6;
+const COMPACT_SEGMENT_SEPARATOR = " | ";
+const COMPACT_WINDOW_SEPARATOR = ", ";
 const ELLIPSIS = "…";
 
 function normalizeMaxWidth(maxWidth: number): number {
@@ -48,26 +42,99 @@ function formatCompactDisplayName(name: string): string {
   return compactText(name.replace(/^\[([^\]]+)\](.*)$/u, "$1$2"));
 }
 
-function formatCompactEntrySegment(params: {
-  entry: QuotaRenderData["entries"][number];
-  percentDisplayMode: QuotaToastConfig["percentDisplayMode"];
-}): string | null {
-  const { entry, percentDisplayMode } = params;
+function formatWindowLabel(label: string): string {
+  const compactLabel = compactText(label.replace(/:+$/u, "").trim());
+  return compactLabel.toLowerCase() === "weekly" ? "7d" : compactLabel;
+}
 
-  if (isValueEntry(entry)) {
-    const name = compactText(entry.name);
-    const value = compactText(entry.value);
-    const segment = [name, value].filter(Boolean).join(" ");
-    return segment || null;
+function getBracketedProviderName(name: string): string | null {
+  const match = /^\[([^\]]+)\]/u.exec(name.trim());
+  return match?.[1]?.trim() || null;
+}
+
+function getProviderName(entry: QuotaToastEntry): string {
+  const bracketedProvider = getBracketedProviderName(entry.name);
+  if (bracketedProvider) return formatCompactDisplayName(bracketedProvider);
+
+  if (entry.group?.trim()) {
+    return formatCompactDisplayName(formatGroupedHeader(entry.group));
   }
 
-  const name = formatCompactDisplayName(buildSingleWindowPercentEntryDisplayName(entry));
-  const displayedPercent = resolveDisplayedPercent(entry.percentRemaining, percentDisplayMode);
-  const percentLabel = formatCompactPercentLabel(entry.percentRemaining, percentDisplayMode);
-  const segment = [name, bar(displayedPercent, COMPACT_PERCENT_BAR_WIDTH), percentLabel]
-    .filter(Boolean)
-    .join(" ");
+  return formatCompactDisplayName(entry.name);
+}
+
+function getWindowLabel(entry: QuotaToastEntry): string | null {
+  const label =
+    extractSingleWindowWindowLabel(entry.label ?? "") ?? extractSingleWindowWindowLabel(entry.name);
+  return label ? formatWindowLabel(label) : null;
+}
+
+function formatCompactValueEntrySegment(
+  entry: Extract<QuotaToastEntry, { kind: "value" }>,
+): string | null {
+  const name = getProviderName(entry);
+  const value = compactText(entry.value);
+  const segment = [name, value].filter(Boolean).join(" - ");
   return segment || null;
+}
+
+type CompactPercentGroup = {
+  provider: string;
+  windows: Array<{ label: string | null; percent: string }>;
+};
+
+type PendingCompactSegment = { kind: "percent"; key: string } | { kind: "value"; segment: string };
+
+function formatCompactPercentGroupSegment(group: CompactPercentGroup): string | null {
+  const windows = group.windows;
+  if (windows.length === 0) return null;
+
+  const summary =
+    windows.length === 1
+      ? windows[0]!.percent
+      : windows
+          .map((window) => (window.label ? `${window.label} ${window.percent}` : window.percent))
+          .join(COMPACT_WINDOW_SEPARATOR);
+
+  return compactText(`${group.provider} - ${summary}`);
+}
+
+function formatCompactEntrySegments(params: {
+  entries: QuotaRenderData["entries"];
+  percentDisplayMode: QuotaToastConfig["percentDisplayMode"];
+}): string[] {
+  const groups = new Map<string, CompactPercentGroup>();
+  const pendingSegments: PendingCompactSegment[] = [];
+
+  for (const entry of params.entries) {
+    if (isValueEntry(entry)) {
+      const segment = formatCompactValueEntrySegment(entry);
+      if (segment) pendingSegments.push({ kind: "value", segment });
+      continue;
+    }
+
+    const provider = getProviderName(entry);
+    const percent = formatCompactPercentLabel(entry.percentRemaining, params.percentDisplayMode);
+    const label = getWindowLabel(entry);
+    const key = provider.toLowerCase();
+    let group = groups.get(key);
+
+    if (!group) {
+      group = { provider, windows: [] };
+      groups.set(key, group);
+      pendingSegments.push({ kind: "percent", key });
+    }
+
+    group.windows.push({ label, percent });
+  }
+
+  return pendingSegments
+    .map((pending) =>
+      pending.kind === "value"
+        ? pending.segment
+        : formatCompactPercentGroupSegment(groups.get(pending.key)!),
+    )
+    .filter((segment): segment is string => Boolean(segment));
 }
 
 function formatCompactTokenCount(count: number): string {
@@ -121,9 +188,7 @@ export function buildCompactQuotaStatusLine(params: {
 
   const data = sanitizeQuotaRenderData(params.data);
   const percentDisplayMode = params.percentDisplayMode ?? "remaining";
-  const segments = data.entries
-    .map((entry) => formatCompactEntrySegment({ entry, percentDisplayMode }))
-    .filter((segment): segment is string => Boolean(segment));
+  const segments = formatCompactEntrySegments({ entries: data.entries, percentDisplayMode });
 
   const sessionTokensSegment = formatCompactSessionTokensSegment(data);
   if (sessionTokensSegment) {

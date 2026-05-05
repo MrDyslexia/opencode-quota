@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { buildCompactQuotaStatusLine } from "../src/lib/tui-compact-format.js";
 
 describe("buildCompactQuotaStatusLine", () => {
-  it("formats percent entries with compact labels, bars, and remaining percent semantics", () => {
+  it("formats percent entries with text-only remaining percent semantics", () => {
     const line = buildCompactQuotaStatusLine({
       percentDisplayMode: "remaining",
       maxWidth: 96,
@@ -20,10 +20,10 @@ describe("buildCompactQuotaStatusLine", () => {
       },
     });
 
-    expect(line).toBe("Copilot 5h █████░ 82%");
+    expect(line).toBe("Copilot - 82%");
   });
 
-  it("formats used percent mode with matching compact bar fill", () => {
+  it("formats used percent mode with text-only percentages", () => {
     const line = buildCompactQuotaStatusLine({
       percentDisplayMode: "used",
       maxWidth: 96,
@@ -40,7 +40,33 @@ describe("buildCompactQuotaStatusLine", () => {
       },
     });
 
-    expect(line).toBe("Copilot 5h █░░░░░ 18%");
+    expect(line).toBe("Copilot - 18%");
+  });
+
+  it("groups multiple percent windows under one provider with compact window labels", () => {
+    const line = buildCompactQuotaStatusLine({
+      percentDisplayMode: "remaining",
+      maxWidth: 96,
+      data: {
+        entries: [
+          {
+            name: "OpenAI rolling window",
+            group: "OpenAI (pro)",
+            label: "5h:",
+            percentRemaining: 100,
+          },
+          {
+            name: "OpenAI weekly window",
+            group: "OpenAI (pro)",
+            label: "Weekly:",
+            percentRemaining: 100,
+          },
+        ],
+        errors: [],
+      },
+    });
+
+    expect(line).toBe("OpenAI (pro) - 5h 100%, 7d 100%");
   });
 
   it("formats value entries without percent mode changing the value", () => {
@@ -73,7 +99,7 @@ describe("buildCompactQuotaStatusLine", () => {
       },
     });
 
-    expect(remaining).toBe("Cursor API $2.40 / $20.00");
+    expect(remaining).toBe("Cursor API - $2.40 / $20.00");
     expect(used).toBe(remaining);
   });
 
@@ -104,7 +130,7 @@ describe("buildCompactQuotaStatusLine", () => {
       },
     });
 
-    expect(line).toBe("Copilot 5h █████░ 82% · Cursor API $2.40 · tok 12.4K in / 3.1K out");
+    expect(line).toBe("Copilot - 82% | Cursor API - $2.40 | tok 12.4K in / 3.1K out");
   });
 
   it("summarizes errors as issue counts when quota segments exist and the count fits", () => {
@@ -125,7 +151,7 @@ describe("buildCompactQuotaStatusLine", () => {
       },
     });
 
-    expect(line).toBe("Copilot █████░ 75% · +2 issues");
+    expect(line).toBe("Copilot - 75% | +2 issues");
   });
 
   it("renders the first error with a remaining count when no quota segments exist", () => {
@@ -147,7 +173,7 @@ describe("buildCompactQuotaStatusLine", () => {
   it("omits the issue count when quota segments exist but the count does not fit", () => {
     const line = buildCompactQuotaStatusLine({
       percentDisplayMode: "remaining",
-      maxWidth: "Copilot █████░ 75%".length,
+      maxWidth: "Copilot - 75%".length,
       data: {
         entries: [
           {
@@ -159,13 +185,13 @@ describe("buildCompactQuotaStatusLine", () => {
       },
     });
 
-    expect(line).toBe("Copilot █████░ 75%");
+    expect(line).toBe("Copilot - 75%");
   });
 
   it("collapses whitespace, sanitizes control text, and truncates with ellipsis", () => {
     const line = buildCompactQuotaStatusLine({
       percentDisplayMode: "remaining",
-      maxWidth: 24,
+      maxWidth: 18,
       data: {
         entries: [
           {
@@ -177,8 +203,8 @@ describe("buildCompactQuotaStatusLine", () => {
       },
     });
 
-    expect(line).toBe("OpenAI Provider ███░░░…");
-    expect(line.length).toBeLessThanOrEqual(24);
+    expect(line).toBe("OpenAI Provider -…");
+    expect(line.length).toBeLessThanOrEqual(18);
     expect(line).not.toContain("\n");
     expect(line).not.toContain("\u001b");
     expect(line).not.toContain("\u0007");

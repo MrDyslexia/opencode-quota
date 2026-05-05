@@ -39,7 +39,7 @@ The installer appends missing plugin/config entries and preserves unrelated/cust
 | Provider mode | Auto-detection for most users, or an explicit provider list for tighter control. |
 | Quota reset periods | One reset period per provider for compact checks, or all reset periods per provider for detailed comparisons. |
 | Quota percentage meaning | Remaining quota or used quota in toast/sidebar displays. |
-| Session token details | Show or hide current session input/output token counts. |
+| Session token details | Hide session input/output token counts for shorter output, or show them when available. |
 
 ### After install
 
@@ -136,7 +136,7 @@ All quota UI surfaces share the same provider data. You can enable one UI surfac
 | --- | --- | --- |
 | Toast | `enableToast: true` | Popup toast after idle/question/compact events. |
 | Sidebar panel | `tuiSidebarPanel.enabled: true` | Full `Quota` panel in OpenCode's session sidebar. Default is `true` for backward compatibility when the TUI plugin is installed. |
-| Compact status line | `tuiCompactStatus.enabled: true` | Short quota line in TUI status locations. |
+| Compact status line | `tuiCompactStatus.enabled: true` | Short text-only quota line in TUI status locations, for example `Copilot (personal) - 94% | OpenAI (pro) - 5h 100%, 7d 100%`. |
 | Terminal/slash only | `enableToast: false`, `tuiSidebarPanel.enabled: false`, `tuiCompactStatus.enabled: false` | Keeps `/quota`, `/quota_status`, and terminal checks. |
 
 For examples and all UI surface options, see [Common configuration](#common-configuration) and [Full configuration reference](#full-configuration-reference).
@@ -316,7 +316,7 @@ Existing `experimental.quotaToast` settings still work when no sidecar file exis
 | `tuiSidebarPanel.enabled` | `true` | Show the Sidebar `Quota` panel when the TUI plugin is installed. Default is `true` for backward compatibility. |
 | `tuiCompactStatus.enabled` | `false` | Opt in to Compact status line UI surfaces. |
 | `tuiCompactStatus.homeBottom` | `true` | Show the Compact status line at the home bottom location. |
-| `tuiCompactStatus.sessionPrompt` | `true` | Manually opt in to wrapping the TUI session prompt. |
+| `tuiCompactStatus.sessionPrompt` | `true` | Show the Compact status line by wrapping the TUI session prompt. Disable this if you only want the home-bottom line. |
 | `tuiCompactStatus.suppressWhenNativeProviderQuota` | `true` | Hide the Compact status line when OpenCode exposes native provider-quota support. |
 | `tuiCompactStatus.maxWidth` | `96` | Maximum Compact status line text width. |
 
@@ -424,7 +424,7 @@ Start here when quota or token data looks wrong.
 | --- | --- |
 | `/quota` shows no providers | Run `/quota_status`, then check provider detection and auth. |
 | Sidebar panel does not appear | Confirm `tui.json` includes `@slkiser/opencode-quota`, restart OpenCode, and check `tuiSidebarPanel.enabled`. |
-| Compact status line does not appear | Confirm `tui.json` includes `@slkiser/opencode-quota`, restart OpenCode, and check `tuiCompactStatus.enabled` plus `homeBottom` or `sessionPrompt`. |
+| Compact status line does not appear | Confirm `tui.json` includes `@slkiser/opencode-quota`, restart OpenCode, and check `tuiCompactStatus.enabled` plus the surface you expect: `homeBottom` for the homepage or `sessionPrompt` for chat sessions. |
 | Popup toasts do not appear | Check `enableToast`, `showOnIdle`, `showOnQuestion`, and `showOnCompact`. |
 | Token reports are empty | Start OpenCode once so `opencode.db` exists, then run a session with model usage. |
 | Pricing looks stale | Run `/pricing_refresh`. |
