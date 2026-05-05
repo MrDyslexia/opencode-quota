@@ -136,7 +136,7 @@ All quota UI surfaces share the same provider data. You can enable one UI surfac
 | --- | --- | --- |
 | Toast | `enableToast: true` | Popup toast after idle/question/compact events. |
 | Sidebar panel | `tuiSidebarPanel.enabled: true` | Full `Quota` panel in OpenCode's session sidebar. Default is `true` for backward compatibility when the TUI plugin is installed. |
-| Compact status line | `tuiCompactStatus.enabled: true` | Short text-only quota line in TUI status locations, for example `Copilot (personal) - 94% | OpenAI (pro) - 5h 100%, 7d 100%`. |
+| Compact status line | `tuiCompactStatus.enabled: true` | Short text-only quota line in TUI status locations, for example `Copilot 94% | OpenAI Pro 5h 100%, 7d 100%`. |
 | Terminal/slash only | `enableToast: false`, `tuiSidebarPanel.enabled: false`, `tuiCompactStatus.enabled: false` | Keeps `/quota`, `/quota_status`, and terminal checks. |
 
 For examples and all UI surface options, see [Common configuration](#common-configuration) and [Full configuration reference](#full-configuration-reference).

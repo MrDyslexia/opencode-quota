@@ -42,6 +42,19 @@ function formatCompactDisplayName(name: string): string {
   return compactText(name.replace(/^\[([^\]]+)\](.*)$/u, "$1$2"));
 }
 
+function formatCompactProviderLabel(name: string): string {
+  const compactName = formatCompactDisplayName(name);
+  const withoutParentheticalPunctuation = compactName.replace(/\(([^)]*)\)/gu, (_match, inner: string) => {
+    const normalized = inner.trim();
+    if (!normalized) return "";
+    if (/^personal$/iu.test(normalized)) return "";
+    if (/^pro$/iu.test(normalized)) return " Pro";
+    return ` ${normalized}`;
+  });
+
+  return compactText(withoutParentheticalPunctuation).replace(/\s{2,}/gu, " ").trim();
+}
+
 function formatWindowLabel(label: string): string {
   const compactLabel = compactText(label.replace(/:+$/u, "").trim());
   return compactLabel.toLowerCase() === "weekly" ? "7d" : compactLabel;
@@ -54,13 +67,13 @@ function getBracketedProviderName(name: string): string | null {
 
 function getProviderName(entry: QuotaToastEntry): string {
   const bracketedProvider = getBracketedProviderName(entry.name);
-  if (bracketedProvider) return formatCompactDisplayName(bracketedProvider);
+  if (bracketedProvider) return formatCompactProviderLabel(bracketedProvider);
 
   if (entry.group?.trim()) {
-    return formatCompactDisplayName(formatGroupedHeader(entry.group));
+    return formatCompactProviderLabel(formatGroupedHeader(entry.group));
   }
 
-  return formatCompactDisplayName(entry.name);
+  return formatCompactProviderLabel(entry.name);
 }
 
 function getWindowLabel(entry: QuotaToastEntry): string | null {
@@ -96,7 +109,7 @@ function formatCompactPercentGroupSegment(group: CompactPercentGroup): string | 
           .map((window) => (window.label ? `${window.label} ${window.percent}` : window.percent))
           .join(COMPACT_WINDOW_SEPARATOR);
 
-  return compactText(`${group.provider} - ${summary}`);
+  return compactText(`${group.provider} ${summary}`);
 }
 
 function formatCompactEntrySegments(params: {
