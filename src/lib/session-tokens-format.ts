@@ -15,6 +15,16 @@ export type SessionTokenSectionModel = {
   lines: string[];
 };
 
+function hasCachedInput(model: SessionTokensData["models"][number]): boolean {
+  return (model.cachedInput ?? 0) > 0;
+}
+
+function hasAnyCachedInput(sessionTokens: SessionTokensData): boolean {
+  return (
+    (sessionTokens.totalCachedInput ?? 0) > 0 || sessionTokens.models.some((model) => hasCachedInput(model))
+  );
+}
+
 function normalizeMaxWidth(maxWidth?: number): number | undefined {
   if (typeof maxWidth !== "number" || !Number.isFinite(maxWidth)) return undefined;
   return Math.max(1, Math.trunc(maxWidth));
@@ -27,11 +37,20 @@ function clampRenderedLine(line: string, maxWidth?: number): string {
 
 function buildWideSessionTokenSectionModel(sessionTokens: SessionTokensData): SessionTokenSectionModel {
   const lines: string[] = [];
+  const showCached = hasAnyCachedInput(sessionTokens);
   for (const model of sessionTokens.models) {
     const shortName = shortenModelName(model.modelID, 20);
     const inStr = formatTokenCount(model.input);
+    const cachedStr = formatTokenCount(model.cachedInput ?? 0);
+    const totalInStr = formatTokenCount(model.totalInput ?? model.input + (model.cachedInput ?? 0));
     const outStr = formatTokenCount(model.output);
-    lines.push(`  ${padRight(shortName, 20)}  ${padLeft(inStr, 6)} in  ${padLeft(outStr, 6)} out`);
+    if (showCached) {
+      lines.push(
+        `  ${padRight(shortName, 20)}  ${padLeft(inStr, 6)} new  ${padLeft(cachedStr, 6)} cache  ${padLeft(totalInStr, 6)} in  ${padLeft(outStr, 6)} out`,
+      );
+    } else {
+      lines.push(`  ${padRight(shortName, 20)}  ${padLeft(inStr, 6)} in  ${padLeft(outStr, 6)} out`);
+    }
   }
 
   return {
@@ -46,14 +65,19 @@ function buildCompactSessionTokenSectionModel(
 ): SessionTokenSectionModel {
   const width = Math.max(1, Math.trunc(maxWidth));
   const lines: string[] = [];
+  const showCached = hasAnyCachedInput(sessionTokens);
 
   for (const model of sessionTokens.models) {
     const modelIndent = width > 2 ? "  " : "";
     const modelLineWidth = Math.max(1, width - modelIndent.length);
     const detailIndent = width > 4 ? "    " : width > 2 ? "  " : "";
     const inStr = formatTokenCount(model.input);
+    const cachedStr = formatTokenCount(model.cachedInput ?? 0);
+    const totalInStr = formatTokenCount(model.totalInput ?? model.input + (model.cachedInput ?? 0));
     const outStr = formatTokenCount(model.output);
-    const compactCounts = `${inStr} in  ${outStr} out`;
+    const compactCounts = showCached
+      ? `${inStr} new  ${cachedStr} cache  ${totalInStr} in  ${outStr} out`
+      : `${inStr} in  ${outStr} out`;
 
     lines.push(`${modelIndent}${shortenModelName(model.modelID, modelLineWidth)}`.slice(0, width));
 
@@ -62,8 +86,15 @@ function buildCompactSessionTokenSectionModel(
       continue;
     }
 
-    lines.push(`${detailIndent}${inStr} in`.slice(0, width));
-    lines.push(`${detailIndent}${outStr} out`.slice(0, width));
+    if (showCached) {
+      lines.push(`${detailIndent}${inStr} new`.slice(0, width));
+      lines.push(`${detailIndent}${cachedStr} cache`.slice(0, width));
+      lines.push(`${detailIndent}${totalInStr} in`.slice(0, width));
+      lines.push(`${detailIndent}${outStr} out`.slice(0, width));
+    } else {
+      lines.push(`${detailIndent}${inStr} in`.slice(0, width));
+      lines.push(`${detailIndent}${outStr} out`.slice(0, width));
+    }
   }
 
   return {
@@ -76,7 +107,11 @@ function buildSidebarSessionTokenSummaryModel(
   sessionTokens: SessionTokensData,
   options?: { maxWidth?: number },
 ): SessionTokenSectionModel {
-  const summaryLine = `  ${formatTokenCount(sessionTokens.totalInput)} in  ${formatTokenCount(sessionTokens.totalOutput)} out`;
+  const totalCached = sessionTokens.totalCachedInput ?? 0;
+  const totalCombined = sessionTokens.totalCombinedInput ?? sessionTokens.totalInput + totalCached;
+  const summaryLine = totalCached > 0
+    ? `  ${formatTokenCount(sessionTokens.totalInput)} new  ${formatTokenCount(totalCached)} cache  ${formatTokenCount(totalCombined)} in  ${formatTokenCount(sessionTokens.totalOutput)} out`
+    : `  ${formatTokenCount(sessionTokens.totalInput)} in  ${formatTokenCount(sessionTokens.totalOutput)} out`;
   return {
     heading: clampRenderedLine(SESSION_TOKEN_SECTION_HEADING, options?.maxWidth),
     lines: [clampRenderedLine(summaryLine, options?.maxWidth)],
