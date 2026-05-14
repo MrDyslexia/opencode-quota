@@ -87,7 +87,7 @@ function normalizeGroupedQuotaEntry(
     return {
       ...normalized,
       group: googleFallback.group,
-      label: label ?? googleFallback.label,
+      ...(label || target === "quota" ? { label: label ?? googleFallback.label } : {}),
     };
   }
 

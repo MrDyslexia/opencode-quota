@@ -142,6 +142,85 @@ describe("buildSidebarQuotaPanelLines", () => {
     expect(lines.every((line) => line.length <= TUI_SIDEBAR_MAX_WIDTH)).toBe(true);
   });
 
+  it("preserves explicit non-duration provider labels in grouped sidebar output", () => {
+    const lines = buildSidebarQuotaPanelLines({
+      config: {
+        formatStyle: "allWindows",
+        percentDisplayMode: "remaining",
+      },
+      data: {
+        entries: [
+          { name: "Copilot", group: "Copilot", label: "Quota:", percentRemaining: 75 },
+          { name: "Crof Requests", group: "Crof", label: "Requests:", percentRemaining: 50 },
+          { name: "Cursor API", group: "Cursor", label: "API:", percentRemaining: 25 },
+          { name: "Kimi Code Fast", group: "Kimi Code", label: "Fast:", percentRemaining: 80 },
+        ],
+        errors: [],
+        sessionTokens: undefined,
+      },
+    });
+
+    const rendered = lines.join("\n");
+    expect(rendered).toContain("\nQuota ");
+    expect(rendered).toContain("\nRequests ");
+    expect(rendered).toContain("\nAPI ");
+    expect(rendered).toContain("\nFast ");
+    expect(rendered).not.toContain("Quota window");
+  });
+
+  it("preserves explicit Google Antigravity labels and falls back for unlabeled legacy rows", () => {
+    const lines = buildSidebarQuotaPanelLines({
+      config: {
+        formatStyle: "allWindows",
+        percentDisplayMode: "remaining",
+      },
+      data: {
+        entries: [
+          { name: "Claude (acct)", label: "Claude:", percentRemaining: 67 },
+          { name: "G3Pro (acct)", percentRemaining: 67 },
+        ],
+        errors: [],
+        sessionTokens: undefined,
+      },
+    });
+
+    const rendered = lines.join("\n");
+    expect(rendered).toContain("[Google Antigravity] (acct)");
+    expect(rendered).toContain("\nClaude ");
+    expect(rendered).toContain("Quota window");
+    expect(rendered).not.toContain("[Claude] (acct)");
+    expect(rendered).not.toContain("[G3Pro] (acct)");
+  });
+
+  it("renders Gemini CLI model tiers in grouped sidebar output", () => {
+    const lines = buildSidebarQuotaPanelLines({
+      config: {
+        formatStyle: "allWindows",
+        percentDisplayMode: "remaining",
+      },
+      data: {
+        entries: [
+          { name: "Gemini Pro", group: "Gemini CLI", label: "Gemini Pro:", percentRemaining: 20 },
+          { name: "Gemini Flash", group: "Gemini CLI", label: "Gemini Flash:", percentRemaining: 50 },
+          {
+            name: "Gemini Flash Lite",
+            group: "Gemini CLI",
+            label: "Gemini Flash Lite:",
+            percentRemaining: 10,
+          },
+        ],
+        errors: [],
+        sessionTokens: undefined,
+      },
+    });
+
+    const rendered = lines.join("\n");
+    expect(rendered).toContain("Gemini Pro");
+    expect(rendered).toContain("Gemini Flash");
+    expect(rendered).toContain("Gemini Flash Lite");
+    expect(rendered).not.toContain("Quota window");
+  });
+
   it("renders grouped quota windows shortest to longest in the sidebar", () => {
     const lines = buildSidebarQuotaPanelLines({
       config: {

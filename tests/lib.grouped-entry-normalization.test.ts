@@ -6,7 +6,7 @@ import {
 } from "../src/lib/grouped-entry-normalization.js";
 
 describe("normalizeGroupedQuotaEntries", () => {
-  it("applies the Google fallback to grouped toast and /quota rendering", () => {
+  it("applies the Google fallback label only for /quota rendering", () => {
     const entry = {
       name: "Claude (acct)",
       percentRemaining: 67,
@@ -25,7 +25,6 @@ describe("normalizeGroupedQuotaEntries", () => {
       {
         ...entry,
         group: "Google Antigravity (acct)",
-        label: "Claude:",
       },
     ]);
   });

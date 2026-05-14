@@ -43,8 +43,10 @@ function extractWindowLabel(text: string): string | null {
 }
 
 function resolveGroupedRowLabel(entry: QuotaToastEntry): string {
-  const fromLabel = extractWindowLabel(entry.label ?? "");
+  const rawLabel = normalizeLabelText(entry.label);
+  const fromLabel = extractWindowLabel(rawLabel);
   if (fromLabel) return `${fromLabel} window`;
+  if (rawLabel) return rawLabel;
 
   const fromName = extractWindowLabel(entry.name);
   if (fromName) return `${fromName} window`;
@@ -179,9 +181,9 @@ export function formatQuotaRowsGrouped(params: {
 
       // Line 1: label + optional right + time at end
       const timeWidth = Math.max(timeStr.length, timeCol);
-      const leftMax = Math.max(1, barWidth - separator.length - timeWidth);
+      const leftMax = Math.max(1, maxWidth - separator.length - timeWidth);
       lines.push(
-        (padRight(label, leftMax) + separator + padLeft(timeStr, timeWidth)).slice(0, barWidth),
+        (padRight(label, leftMax) + separator + padLeft(timeStr, timeWidth)).slice(0, maxWidth),
       );
 
       // Line 2: bar + percent

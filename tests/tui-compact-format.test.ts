@@ -43,6 +43,46 @@ describe("buildCompactQuotaStatusLine", () => {
     expect(line).toBe("Copilot 18%");
   });
 
+  it("preserves Gemini CLI model tiers in grouped compact status", () => {
+    const line = buildCompactQuotaStatusLine({
+      percentDisplayMode: "remaining",
+      maxWidth: 96,
+      data: {
+        entries: [
+          { name: "Gemini Pro", group: "Gemini CLI", label: "Gemini Pro:", percentRemaining: 20 },
+          { name: "Gemini Flash", group: "Gemini CLI", label: "Gemini Flash:", percentRemaining: 50 },
+          {
+            name: "Gemini Flash Lite",
+            group: "Gemini CLI",
+            label: "Gemini Flash Lite:",
+            percentRemaining: 10,
+          },
+        ],
+        errors: [],
+      },
+    });
+
+    expect(line).toBe("Gemini CLI Gemini Pro 20%, Gemini Flash 50%, Gemini Flash Lite 10%");
+  });
+
+  it("preserves explicit non-duration compact labels when multiple rows share a provider", () => {
+    const line = buildCompactQuotaStatusLine({
+      percentDisplayMode: "remaining",
+      maxWidth: 96,
+      data: {
+        entries: [
+          { name: "Cursor API", group: "Cursor", label: "API:", percentRemaining: 25 },
+          { name: "Cursor Requests", group: "Cursor", label: "Requests:", percentRemaining: 50 },
+          { name: "Kimi Code Fast", group: "Kimi Code", label: "Fast:", percentRemaining: 80 },
+          { name: "Kimi Code Slow", group: "Kimi Code", label: "Slow:", percentRemaining: 40 },
+        ],
+        errors: [],
+      },
+    });
+
+    expect(line).toBe("Cursor API 25%, Requests 50% | Kimi Code Fast 80%, Slow 40%");
+  });
+
   it("groups multiple percent windows under one provider with compact window labels", () => {
     const line = buildCompactQuotaStatusLine({
       percentDisplayMode: "remaining",

@@ -77,9 +77,12 @@ function getProviderName(entry: QuotaToastEntry): string {
 }
 
 function getWindowLabel(entry: QuotaToastEntry): string | null {
-  const label =
+  const windowLabel =
     extractSingleWindowWindowLabel(entry.label ?? "") ?? extractSingleWindowWindowLabel(entry.name);
-  return label ? formatWindowLabel(label) : null;
+  if (windowLabel) return formatWindowLabel(windowLabel);
+
+  const explicitLabel = entry.label?.trim().replace(/:+$/u, "").trim();
+  return explicitLabel ? compactText(explicitLabel) : null;
 }
 
 function formatCompactValueEntrySegment(

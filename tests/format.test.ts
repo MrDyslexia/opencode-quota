@@ -260,6 +260,35 @@ describe("formatQuotaRows", () => {
     expect(out).not.toContain("Quota window");
   });
 
+  it("preserves explicit non-duration grouped percent labels", () => {
+    const out = formatQuotaRows({
+      version: "1.0.0",
+      style: "allWindows",
+      layout: { maxWidth: 80, narrowAt: 42, tinyAt: 32 },
+      entries: [
+        { name: "Copilot", group: "Copilot", label: "Quota:", percentRemaining: 75 },
+        { name: "Crof", group: "Crof", label: "Requests:", percentRemaining: 50 },
+        { name: "Cursor API", group: "Cursor", label: "API:", percentRemaining: 25 },
+      ],
+    });
+
+    expect(out).toContain("\nQuota ");
+    expect(out).toContain("\nRequests ");
+    expect(out).toContain("\nAPI ");
+    expect(out).not.toContain("Quota window");
+  });
+
+  it("uses Quota window only for unlabeled grouped percent rows", () => {
+    const out = formatQuotaRows({
+      version: "1.0.0",
+      style: "allWindows",
+      layout: { maxWidth: 80, narrowAt: 42, tinyAt: 32 },
+      entries: [{ name: "Unlabeled Provider", group: "Unlabeled Provider", percentRemaining: 75 }],
+    });
+
+    expect(out).toContain("Quota window");
+  });
+
   it("shares single-window provider/window display labels with classic formatting", () => {
     expect(
       buildSingleWindowPercentEntryDisplayName({
@@ -430,7 +459,7 @@ describe("formatQuotaRows", () => {
     expect(out.indexOf("5h window")).toBeLessThan(out.indexOf("Weekly window"));
   });
 
-  it("groups legacy Google-style entries without duplicating the header text", () => {
+  it("preserves explicit legacy Google-style labels and only falls back for unlabeled rows", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-01-15T12:00:00.000Z"));
 
@@ -441,6 +470,12 @@ describe("formatQuotaRows", () => {
       entries: [
         {
           name: "Claude (acct)",
+          label: "Claude:",
+          percentRemaining: 67,
+          resetTimeIso: "2026-01-15T15:00:00.000Z",
+        },
+        {
+          name: "G3Pro (acct)",
           percentRemaining: 67,
           resetTimeIso: "2026-01-15T15:00:00.000Z",
         },
@@ -448,8 +483,10 @@ describe("formatQuotaRows", () => {
     });
 
     expect(out).toContain("[Google Antigravity] (acct)");
+    expect(out).toContain("\nClaude ");
     expect(out).toContain("Quota window");
     expect(out).not.toContain("[Claude] (acct)");
+    expect(out).not.toContain("[G3Pro] (acct)");
   });
 
   it("renders single-window session tokens as a one-line total summary", () => {
