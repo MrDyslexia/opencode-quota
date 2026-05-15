@@ -109,6 +109,27 @@ describe("buildCompactQuotaStatusLine", () => {
     expect(line).toBe("OpenAI Pro 5h 100%, 7d 100%");
   });
 
+  it("keeps compact status provider labels intentionally short", () => {
+    const line = buildCompactQuotaStatusLine({
+      percentDisplayMode: "remaining",
+      maxWidth: 96,
+      data: {
+        entries: [
+          {
+            name: "Copilot rolling window",
+            group: "Copilot (personal)",
+            label: "5h:",
+            percentRemaining: 75,
+          },
+        ],
+        errors: [],
+      },
+    });
+
+    expect(line).toBe("Copilot 75%");
+    expect(line).not.toContain("[Copilot] (personal)");
+  });
+
   it("formats value entries without percent mode changing the value", () => {
     const remaining = buildCompactQuotaStatusLine({
       percentDisplayMode: "remaining",

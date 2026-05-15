@@ -326,6 +326,72 @@ describe("formatQuotaRows", () => {
     expect(out).toContain("[Copilot] (personal) Monthly");
   });
 
+  it("preserves classic provider/account labels at sidebar width when they fit", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-15T10:00:00.000Z"));
+
+    const out = formatQuotaRows({
+      version: "1.0.0",
+      layout: { maxWidth: 36, narrowAt: 36, tinyAt: 20 },
+      entries: [
+        {
+          name: "[Copilot] (personal)",
+          percentRemaining: 75,
+          resetTimeIso: "2026-01-15T12:00:00.000Z",
+        },
+      ],
+    });
+
+    const lines = out.split("\n");
+    expect(lines[0]).toContain("[Copilot] (personal)");
+    expect(lines[1]).toContain("75% left");
+    expect(lines.every((line) => line.length <= 36)).toBe(true);
+  });
+
+  it("preserves classic provider/account/window labels by shrinking reset padding", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-15T10:00:00.000Z"));
+
+    const out = formatQuotaRows({
+      version: "1.0.0",
+      layout: { maxWidth: 36, narrowAt: 36, tinyAt: 20 },
+      entries: [
+        {
+          name: "[Copilot] (personal) Monthly",
+          percentRemaining: 75,
+          resetTimeIso: "2026-01-15T12:00:00.000Z",
+        },
+      ],
+    });
+
+    const lines = out.split("\n");
+    expect(lines[0]).toContain("[Copilot] (personal) Monthly");
+    expect(lines.every((line) => line.length <= 36)).toBe(true);
+  });
+
+  it("preserves classic value-row provider/account labels when they fit", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-15T10:00:00.000Z"));
+
+    const out = formatQuotaRows({
+      version: "1.0.0",
+      layout: { maxWidth: 36, narrowAt: 36, tinyAt: 20 },
+      entries: [
+        {
+          name: "[Copilot] (personal)",
+          kind: "value",
+          value: "Unlimited",
+          resetTimeIso: "2026-01-15T12:00:00.000Z",
+        },
+      ],
+    });
+
+    const lines = out.split("\n");
+    expect(lines[0]).toContain("[Copilot] (personal)");
+    expect(lines[0]).toContain("Unlimited");
+    expect(lines.every((line) => line.length <= 36)).toBe(true);
+  });
+
   it("does not double-append window labels when single-window names are already preformatted", () => {
     const out = formatQuotaRows({
       version: "1.0.0",

@@ -651,9 +651,13 @@ Run `/quota_status` and check pricing snapshot health plus OpenCode database pat
 
 </details>
 
-## Issues
+## Contributors
 
-Please use the Bug report or Feature request templates when opening issues. Freeform issues, or bug/feature issues missing the required template sections, may be automatically commented on and closed.
+Thanks to everyone who has contributed to OpenCode Quota.
+
+<a href="https://github.com/slkiser/opencode-quota/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=slkiser/opencode-quota" />
+</a>
 
 ## License
 

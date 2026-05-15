@@ -23,6 +23,70 @@ import {
 import { getQuotaFormatStyleDefinition } from "./quota-format-style.js";
 import { buildSingleWindowPercentEntryDisplayName } from "./quota-entry-display.js";
 
+function buildClassicNameTimeLine(params: {
+  leftText: string;
+  timeStr: string;
+  maxWidth: number;
+  separator: string;
+  preferredTimeWidth: number;
+}): string {
+  if (!params.timeStr) {
+    return params.leftText.slice(0, params.maxWidth);
+  }
+
+  let timeWidth = Math.max(params.timeStr.length, params.preferredTimeWidth);
+  const preferredNameWidth = params.maxWidth - params.separator.length - timeWidth;
+  const compactLineWidth = params.leftText.length + params.separator.length + params.timeStr.length;
+  if (params.leftText.length > preferredNameWidth && compactLineWidth <= params.maxWidth) {
+    timeWidth = params.timeStr.length;
+  }
+
+  const nameWidth = Math.max(1, params.maxWidth - params.separator.length - timeWidth);
+  return (
+    padRight(params.leftText, nameWidth) +
+    params.separator +
+    padLeft(params.timeStr, timeWidth)
+  ).slice(0, params.maxWidth);
+}
+
+function buildClassicValueLine(params: {
+  name: string;
+  value: string;
+  timeStr: string;
+  maxWidth: number;
+  separator: string;
+  preferredValueWidth: number;
+  preferredTimeWidth: number;
+}): string {
+  let valueWidth = Math.max(params.value.length, params.preferredValueWidth);
+  let timeWidth = Math.max(params.timeStr.length, params.preferredTimeWidth);
+  const preferredNameWidth =
+    params.maxWidth - params.separator.length - valueWidth - params.separator.length - timeWidth;
+  const compactLineWidth =
+    params.name.length +
+    params.separator.length +
+    params.value.length +
+    params.separator.length +
+    params.timeStr.length;
+
+  if (params.name.length > preferredNameWidth && compactLineWidth <= params.maxWidth) {
+    valueWidth = params.value.length;
+    timeWidth = params.timeStr.length;
+  }
+
+  const nameWidth = Math.max(
+    1,
+    params.maxWidth - params.separator.length - valueWidth - params.separator.length - timeWidth,
+  );
+  return (
+    padRight(params.name, nameWidth) +
+    params.separator +
+    padLeft(params.value, valueWidth) +
+    params.separator +
+    padLeft(params.timeStr, timeWidth)
+  ).slice(0, params.maxWidth);
+}
+
 export function formatQuotaRows(params: {
   version: string;
   layout?: {
@@ -70,9 +134,10 @@ export function formatQuotaRows(params: {
 
   const timeCol = isTiny ? 6 : isNarrow ? 7 : 7;
 
-  // Bar width: use most of maxWidth, leaving room for separator + percent on line 2
-  // Line 1 (name + time) spans exactly barWidth
-  // Line 2 (bar + percent) spans barWidth + separator + percentCol
+  // Bar width: use most of maxWidth, leaving room for separator + percent on line 2.
+  // Line 1 (name + time) can use full maxWidth so labels are not cut before the
+  // sidebar width is exhausted.
+  // Line 2 (bar + percent) spans barWidth + separator + percentCol.
   const barWidth = Math.max(10, maxWidth - separator.length - percentCol);
 
   const lines: string[] = [];
@@ -110,12 +175,17 @@ export function formatQuotaRows(params: {
       return;
     }
 
-    // Line 1: label + time (total width = barWidth only)
-    // Time is right-aligned to end of bar
-    const timeWidth = Math.max(timeStr.length, timeCol);
-    const nameWidth = Math.max(1, barWidth - separator.length - timeWidth);
-    const timeLine = padRight(leftText, nameWidth) + separator + padLeft(timeStr, timeWidth);
-    lines.push(timeLine.slice(0, barWidth));
+    // Line 1: label + time can use the full available width. Prefer keeping the
+    // reset text aligned, but shrink padding before truncating labels that fit.
+    lines.push(
+      buildClassicNameTimeLine({
+        leftText,
+        timeStr,
+        maxWidth,
+        separator,
+        preferredTimeWidth: timeCol,
+      }),
+    );
 
     // Line 2: bar + percent (percent extends beyond bar width)
     const barCell = bar(displayedPercent, barWidth);
@@ -142,20 +212,17 @@ export function formatQuotaRows(params: {
       return;
     }
 
-    const right = value;
-    const rightWidth = Math.max(right.length, 6);
-    const timeWidth = Math.max(timeStr.length, timeCol);
-    const leftWidth = Math.max(
-      1,
-      maxWidth - separator.length - rightWidth - separator.length - timeWidth,
+    lines.push(
+      buildClassicValueLine({
+        name,
+        value,
+        timeStr,
+        maxWidth,
+        separator,
+        preferredValueWidth: 6,
+        preferredTimeWidth: timeCol,
+      }),
     );
-    const line =
-      padRight(name, leftWidth) +
-      separator +
-      padLeft(right, rightWidth) +
-      separator +
-      padLeft(timeStr, timeWidth);
-    lines.push(line.slice(0, maxWidth));
   };
 
   for (const entry of params.entries ?? []) {

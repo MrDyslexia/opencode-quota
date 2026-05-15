@@ -336,6 +336,58 @@ describe("buildSidebarQuotaPanelLines", () => {
     expect(lines.join("\n")).not.toContain("2h 14m");
   });
 
+  it("does not cut single-window provider/account labels that fit in the sidebar", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-15T10:00:00.000Z"));
+
+    const lines = buildSidebarQuotaPanelLines({
+      config: {
+        formatStyle: "singleWindow",
+        percentDisplayMode: "remaining",
+      },
+      data: {
+        entries: [
+          {
+            name: "[Copilot] (personal)",
+            percentRemaining: 75,
+            resetTimeIso: "2026-01-15T12:00:00.000Z",
+          },
+        ],
+        errors: [],
+        sessionTokens: undefined,
+      },
+    });
+
+    expect(lines[0]).toContain("[Copilot] (personal)");
+    expect(lines.every((line) => line.length <= TUI_SIDEBAR_MAX_WIDTH)).toBe(true);
+  });
+
+  it("does not cut single-window provider/account/window labels that fit in the sidebar", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-15T10:00:00.000Z"));
+
+    const lines = buildSidebarQuotaPanelLines({
+      config: {
+        formatStyle: "singleWindow",
+        percentDisplayMode: "remaining",
+      },
+      data: {
+        entries: [
+          {
+            name: "[Copilot] (personal) Monthly",
+            percentRemaining: 75,
+            resetTimeIso: "2026-01-15T12:00:00.000Z",
+          },
+        ],
+        errors: [],
+        sessionTokens: undefined,
+      },
+    });
+
+    expect(lines[0]).toContain("[Copilot] (personal) Monthly");
+    expect(lines.every((line) => line.length <= TUI_SIDEBAR_MAX_WIDTH)).toBe(true);
+  });
+
   it("renders used percentages and matching bar fill in the sidebar", () => {
     const lines = buildSidebarQuotaPanelLines({
       config: {
