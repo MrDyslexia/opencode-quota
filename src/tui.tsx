@@ -335,16 +335,26 @@ function SidebarContentView(props: {
   };
 
   const toggleIcon = () => collapsed() ? "▶" : "▼";
+  const providerCount = () => {
+    const currentLines = lines();
+    if (panel().status !== "ready" || currentLines.length === 0) return 0;
+    return currentLines.filter((line) => /^\[.*\]/u.test(line.trim())).length;
+  };
 
   return (
     <Show when={shouldRenderSidebarPanel(panel())}>
       <box gap={0}>
-        <text
-          fg={props.api.theme.current.text}
-          onMouseDown={toggleCollapsed}
-        >
-          <b>{toggleIcon()} Quota</b>
-        </text>
+        <box flexDirection="row">
+          <text
+            fg={props.api.theme.current.text}
+            onMouseDown={toggleCollapsed}
+          >
+            <b>{toggleIcon()} Quota</b>
+          </text>
+          <Show when={collapsed() && providerCount() > 0}>
+            <text fg={props.api.theme.current.textMuted}> ({providerCount()} providers)</text>
+          </Show>
+        </box>
         <box gap={0}>
           {displayLines().map((line) => (
             <text fg={getSidebarBodyLineColor(line, props.api.theme.current)} wrapMode="none">
